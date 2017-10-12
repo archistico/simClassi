@@ -11,8 +11,8 @@ function wr(testo) {
     }
 }
 
-function calcolaCostoOrario(prezzoAcquisto, durataAnni) {
-    return (prezzoAcquisto / (durataAnni * 8760)).toFixed(2);
+function calcolaCostoOrario(prezzoAcquisto, durataAnni, tassoUtilizzo) {
+    return (prezzoAcquisto / (durataAnni * 8760 * tassoUtilizzo)).toFixed(2);
 }
 
 // **********************************
@@ -48,11 +48,56 @@ class Strumento extends Elemento {
     }
 }
 
+class Materiale extends Elemento {
+    constructor(nome, costo) {
+        super(nome);
+        this.costo = parseFloat(costo);
+    }
+
+    getCosto() {
+        return this.costo;
+    }
+
+    getCostoStringa() {
+        return "€ " + this.costo.toFixed(2);
+    }
+
+    getDescrizione() {
+        return this.getNome() + " | " + this.getCostoStringa();
+    }
+}
+
+class QuantitaMateriale extends Elemento {
+    constructor(nome, materiale, quantita) {
+        super(nome);
+        this.materiale = materiale;
+        this.quantita = parseFloat(quantita);
+        this.costo = this.getCalcolaCosto();
+    }
+
+    getCalcolaCosto() {
+        return this.materiale.costo * this.quantita;
+    }
+
+    getCosto() {
+        return this.costo;
+    }
+
+    getCostoStringa() {
+        return "€ " + this.costo.toFixed(2);
+    }
+
+    getDescrizione() {
+        return this.getNome() + " | " + this.getCostoStringa();
+    }
+}
+
 class Compito extends Elemento {
-    constructor(nome, strumenti, durata) {
+    constructor(nome, strumenti, durata, listamateriali) {
         super(nome);
         this.strumenti = strumenti;
         this.durata = durata;
+        this.listamateriali = listamateriali;
         this.costo = this.getCalcoloCosto();
     }
 
@@ -60,6 +105,9 @@ class Compito extends Elemento {
         var ris = 0;
         for (var c = 0; c < this.strumenti.length; c++) {
             ris += this.strumenti[c].getCosto() * this.durata;
+        }
+        for (var c = 0; c < this.listamateriali.length; c++) {
+            ris += this.listamateriali[c].getCosto();
         }
         return ris;
     }
@@ -82,6 +130,11 @@ class Compito extends Elemento {
         for (var c = 0; c < this.strumenti.length; c++) {
             descr += " - " + this.strumenti[c].getNome() + " | " + this.strumenti[c].getCostoStringa() + "<br>";
         }
+        descr += "Materiali: <br>";
+        for (var c = 0; c < this.listamateriali.length; c++) {
+            descr += " - " + this.listamateriali[c].getNome() + " | " + this.listamateriali[c].getCostoStringa() + "<br>";
+        }
+
         descr += "Durata: " + this.getDurata() + " h<br>";
         descr += "Costo Totale: € " + this.getCosto().toFixed(2) + "</i>";
         return descr;
@@ -101,6 +154,9 @@ class Lavorazione extends Elemento {
         for (var cc = 0; cc < this.compiti.length; cc++) {
             for (var cs = 0; cs < this.compiti[cc].strumenti.length; cs++) {
                 ris += this.compiti[cc].strumenti[cs].getCosto() * this.compiti[cc].durata;
+            }
+            for (var cm = 0; cm < this.compiti[cc].listamateriali.length; cm++) {
+                ris += this.compiti[cc].listamateriali[cm].getCosto();
             }
         }
         return ris;
@@ -131,9 +187,12 @@ class Lavorazione extends Elemento {
         descr += "Compiti: <br>";
 
         for (var cc = 0; cc < this.compiti.length; cc++) {
-            descr += " + " + this.compiti[cc].getNome() + " | Durata: " + this.compiti[cc].getDurata() + " h | Costo: € " + this.compiti[cc].getCosto().toFixed(2) + "<br>";
+            descr += " + " + this.compiti[cc].getNome() + " | Durata: " + this.compiti[cc].getDurata() + " h | Costo compito: € " + this.compiti[cc].getCosto().toFixed(2) + "<br>";
             for (var cs = 0; cs < this.compiti[cc].strumenti.length; cs++) {
-                descr += " -- " + this.compiti[cc].strumenti[cs].getNome() + " | Costo compito: € " + (this.compiti[cc].strumenti[cs].getCosto() * this.compiti[cc].getDurata()).toFixed(2) + "<br>";
+                descr += " -- " + this.compiti[cc].strumenti[cs].getNome() + " | Costo: € " + (this.compiti[cc].strumenti[cs].getCosto() * this.compiti[cc].getDurata()).toFixed(2) + "<br>";
+            }
+            for (var cm = 0; cm < this.compiti[cc].listamateriali.length; cm++) {
+                descr += " -- " + this.compiti[cc].listamateriali[cm].getNome() + " | Costo: € " + this.compiti[cc].listamateriali[cm].getCosto().toFixed(2) + "<br>";
             }
         }
 
@@ -153,11 +212,20 @@ var autista = new Strumento("Autista", 20.0);
 var muratore = new Strumento("Muratore", 35.0);
 var capocantiere = new Strumento("Capo cantiere", 45.0);
 
-var pala = new Strumento("Pala", calcolaCostoOrario(100, 1));
-var camion = new Strumento("Camion", calcolaCostoOrario(30000, 5));
+var pala = new Strumento("Pala", calcolaCostoOrario(100, 1, 0.3));
+var camion = new Strumento("Camion", calcolaCostoOrario(30000, 5, 0.3));
 
-var scavo = new Compito("Scavo", [manovale, pala], 100);
-var trasporto = new Compito("Trasporto", [autista, camion], 3);
+var cemento = new Materiale("Cemento", 5);
+var acciaio = new Materiale("Acciaio", 2);
+var legno = new Materiale("Legno", 2);
+var benzina = new Materiale("Benzina", 1.33);
+
+var benzina10L = new QuantitaMateriale("Benzina 10 L", benzina, 10);
+var legno20 = new QuantitaMateriale("Legno 20 mc", legno, 20);
+var acciaio100 = new QuantitaMateriale("Tiranti 100 kg", acciaio, 100);
+
+var scavo = new Compito("Scavo", [manovale, pala], 100, [legno20, acciaio100]);
+var trasporto = new Compito("Trasporto", [autista, camion], 3, [benzina10L]);
 
 var fondazione = new Lavorazione("Fondazione", [scavo, trasporto]);
 
