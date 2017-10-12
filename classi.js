@@ -203,6 +203,12 @@ class Lavorazione extends Elemento {
     }
 }
 
+class Cronoprogramma {
+    constructor() {
+
+    }
+}
+
 // **********************************
 // ******* IMPLEMENTAZIONE  *********
 // **********************************
@@ -224,9 +230,10 @@ var benzina10L = new QuantitaMateriale("Benzina 10 L", benzina, 10);
 var legno20 = new QuantitaMateriale("Legno 20 mc", legno, 20);
 var acciaio100 = new QuantitaMateriale("Tiranti 100 kg", acciaio, 100);
 
-var scavo = new Compito("Scavo", [manovale, pala], 100, [legno20, acciaio100]);
+var scavo = new Compito("Scavo", [manovale, pala], 10, [legno20, acciaio100]);
 var trasporto = new Compito("Trasporto", [autista, camion], 3, [benzina10L]);
+var supervisione = new Compito("Supervisione", [capocantiere], 1, [])
 
-var fondazione = new Lavorazione("Fondazione", [scavo, trasporto]);
+var fondazione = new Lavorazione("Fondazione", [scavo, trasporto, supervisione]);
 
 wr(fondazione.getDescrizione());
